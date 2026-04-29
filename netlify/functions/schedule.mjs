@@ -1,41 +1,56 @@
 import { getStore } from "@netlify/blobs";
 
-const store = getStore("dosports-live-data");
-const KEY = "schedule.json";
+export default async (req, context) => {
+  const store = getStore("schedule");
 
-function defaultData() {
-  return {
-    bb: { wdDays:["월","화","수","목","금"], wdTimes:["14:00-15:00","15:00-16:00","16:00-17:00","17:00-18:00","18:00-19:00","19:00-20:00"], wdGrid:Array.from({length:6},()=>Array.from({length:5},()=>[])), note:"", sat:{times:[],cells:[]}, sun:{times:[],cells:[]} },
-    sc: { wdDays:["월","화","수","목","금"], wdTimes:["14:00-15:00","15:00-16:00","16:00-17:00","17:00-18:00","18:00-19:00","19:00-20:00"], wdGrid:Array.from({length:6},()=>Array.from({length:5},()=>[])), note:"", sat:{times:[],cells:[]}, sun:{times:[],cells:[]} },
-    kd: { wdDays:["월","화","수","목","금"], wdTimes:["14:00-15:00","15:00-16:00","16:00-17:00","17:00-18:00","18:00-19:00","19:00-20:00"], wdGrid:Array.from({length:6},()=>Array.from({length:5},()=>[])), note:"", sat:{times:[],cells:[]}, sun:{times:[],cells:[]} },
-    ticker:["공지사항을 입력하세요"],
-    memo:{bb:"",sc:"",kd:""}
-  };
-}
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
+  // GET: 데이터 읽기
+  if (req.method === "GET") {
+    try {
+      const data = await store.get("timetable", { type: "json" });
+      if (!data) {
+        return new Response(JSON.stringify({ empty: true }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
     }
-  });
-}
-
-export default async (request) => {
-  if (request.method === "GET") {
-    const saved = await store.get(KEY, { type: "json" });
-    return json({ data: saved?.data || saved || defaultData(), updatedAt: saved?.updatedAt || "" });
   }
 
-  if (request.method === "POST") {
-    const body = await request.json().catch(() => null);
-    if (!body?.data) return json({ error: "data is required" }, 400);
-    const payload = { data: body.data, updatedAt: new Date().toISOString() };
-    await store.setJSON(KEY, payload);
-    return json({ ok: true, updatedAt: payload.updatedAt });
+  // POST: 데이터 저장
+  if (req.method === "POST") {
+    try {
+      const body = await req.json();
+      await store.setJSON("timetable", body);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
   }
 
-  return json({ error: "Method not allowed" }, 405);
+  // OPTIONS: CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+      }
+    });
+  }
+
+  return new Response("Method not allowed", { status: 405 });
 };
+
+export const config = { path: "/api/schedule" };
