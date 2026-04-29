@@ -1,8 +1,7 @@
 {
-  "name": "dosports-live-sync",
-  "private": true,
-  "type": "module",
+  "name": "dosports-timetable",
+  "version": "1.0.0",
   "dependencies": {
-    "@netlify/blobs": "^9.0.0"
+    "@netlify/blobs": "^8.1.0"
   }
 }
