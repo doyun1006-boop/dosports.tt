@@ -10,6 +10,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .w{max-width:720px;margin:0 auto}
 .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;background:#1a1d27;border-radius:10px;padding:13px 16px;border:0.5px solid #3a3f55}
 .logo{font-size:16px;font-weight:700;color:#fff}.logo em{color:#e8a020;font-style:normal}
+.sync-indicator{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:600;transition:.3s}
+.sync-ok{background:#0a2018;color:#4ade80}
+.sync-err{background:#3a0d0d;color:#f87171}
+.sync-loading{background:#1e2130;color:#8a90a8}
 .ticker-wrap{display:flex;align-items:center;background:#1a1d27;border:0.5px solid #3a3f55;border-radius:8px;padding:10px 12px;margin-bottom:10px;gap:10px;overflow:hidden}
 .ticker-label{font-size:13px;font-weight:700;color:#e8a020;flex-shrink:0;white-space:nowrap}
 .ticker-vp{flex:1;overflow:hidden}
@@ -33,7 +37,7 @@ td.tc.te:hover{background:#252838!important}
 .te-ic{font-size:8px;color:#e8a020;position:absolute;top:2px;right:2px;opacity:.7}
 td.tc.dr-row{cursor:grab;user-select:none;-webkit-user-select:none}
 td.tc.dr-row::before{content:'⠿';font-size:10px;color:#3a3f55;margin-right:3px}
-td.tc.row-src{background:#2a1f00!important;color:#e8a020!important;border-color:#50380a!important}
+td.tc.row-src{background:#2a1f00!important;color:#e8a020!important}
 td.tc.row-over{background:rgba(232,160,32,.22)!important;border-color:#e8a020!important}
 td.cell{vertical-align:top;padding:3px;background:#141720;min-width:64px;transition:.15s}
 td.cell.drop-ok{background:rgba(232,160,32,.12)!important;outline:1.5px dashed #e8a020;outline-offset:-2px}
@@ -134,13 +138,19 @@ td.cell.drop-ok{background:rgba(232,160,32,.12)!important;outline:1.5px dashed #
 </head>
 <body>
 <div class="w">
-<div class="hd"><div class="logo">DO <em>SPORTS</em> 잠실점 시간표</div><button class="btn-e" id="edbtn" onclick="toggleEdit()">✎ 편집</button></div>
+<div class="hd">
+  <div class="logo">DO <em>SPORTS</em> 잠실점 시간표</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="sync-indicator sync-loading" id="sync-indicator">동기화 중...</span>
+    <button class="btn-e" id="edbtn" onclick="toggleEdit()">✎ 편집</button>
+  </div>
+</div>
 <div class="ticker-wrap">
   <span class="ticker-label">📢 공지</span>
   <div class="ticker-vp"><div class="ticker-track" id="ticker-track">로딩 중...</div></div>
   <button class="ticker-edit" id="tk-btn" onclick="openTickerModal()">+ 공지 편집</button>
 </div>
-<div class="ebar" id="ebar">✎ 편집 모드 <span class="ebar-tip">| 카드 길게 누르면 이동 | 시간 길게 누르면 순서 변경</span></div>
+<div class="ebar" id="ebar">✎ 편집 모드 <span class="ebar-tip">| 카드 길게 누르면 이동 | 시간 길게 누르면 순서 변경 | 편집 중 자동동기화 일시정지</span></div>
 <div class="stabs">
   <button class="stab on" onclick="ss('bb',this)">🏀 농구교실</button>
   <button class="stab" onclick="ss('sc',this)">⚽ 축구교실</button>
@@ -156,6 +166,8 @@ td.cell.drop-ok{background:rgba(232,160,32,.12)!important;outline:1.5px dashed #
 </div>
 </div>
 <div id="drag-ghost" style="display:none"></div>
+
+<!-- 수업 편집 모달 -->
 <div class="ov" id="cm-ov" style="display:none">
 <div class="md">
   <div class="md-hd"><div class="md-hd-lbl" id="m-lbl">수업 수정</div><div class="md-hd-slot" id="m-slot">—</div></div>
@@ -187,6 +199,8 @@ td.cell.drop-ok{background:rgba(232,160,32,.12)!important;outline:1.5px dashed #
   <div class="md-footer"><button class="btn-save" onclick="saveCell()">저장</button><button class="btn-del" id="btn-del" onclick="deleteClass()" style="display:none">삭제</button><button class="btn-cancel" onclick="closeOv('cm-ov')">취소</button></div>
 </div>
 </div>
+
+<!-- 시간 편집 모달 -->
 <div class="ov" id="te-ov" style="display:none">
 <div class="md" style="max-width:360px">
   <div class="md-hd"><div class="md-hd-lbl">시간 수정</div><div class="md-hd-slot" id="te-slot">—</div></div>
@@ -194,6 +208,8 @@ td.cell.drop-ok{background:rgba(232,160,32,.12)!important;outline:1.5px dashed #
   <div class="md-footer"><button class="btn-save" onclick="saveTime()">저장</button><button class="btn-cancel" onclick="closeOv('te-ov')">취소</button></div>
 </div>
 </div>
+
+<!-- 공지 모달 -->
 <div class="ov" id="tk-ov" style="display:none">
 <div class="md">
   <div class="md-hd"><div class="md-hd-lbl">공지 관리</div><div class="md-hd-slot">스크롤 공지 편집</div></div>
@@ -201,6 +217,8 @@ td.cell.drop-ok{background:rgba(232,160,32,.12)!important;outline:1.5px dashed #
   <div class="md-footer"><button class="btn-save" onclick="saveTickerAll()">저장</button><button class="btn-cancel" onclick="closeOv('tk-ov')">취소</button></div>
 </div>
 </div>
+
+<!-- 비밀번호 모달 -->
 <div class="ov" id="pw-ov" style="display:none">
 <div class="md" style="max-width:360px">
   <div class="md-hd"><div class="md-hd-lbl">편집 잠금 해제</div><div class="md-hd-slot">비밀번호 입력</div></div>
@@ -209,16 +227,91 @@ td.cell.drop-ok{background:rgba(232,160,32,.12)!important;outline:1.5px dashed #
 </div>
 </div>
 <div class="toast" id="toast"></div>
+
 <script>
 const PWD='1234';
+const API='/api/schedule';
 let EM=false,ET=null,TE_=null,CS='bb',DATA=null,CT='open';
-const SK='dosports-tt-v12';
 let memoTimer=null,DRAG=null,LONG_TIMER=null,CV={mx:0,en:0,wl:0};
 const LONG_MS=400;
 const SAT_TIMES=['9:00-10:10','10:10-11:20','11:20-12:30','12:30-13:40','13:40-14:50','14:50-16:00','16:00-17:30','17:30-18:40','18:40-19:50','19:50-21:00'];
 const SUN_TIMES=['9:00-10:10','10:10-11:20','11:20-12:30','12:30-13:40','15:00-16:10','18:20-19:30','19:30-20:40','20:40-21:50'];
 const DEF_TICKER=['⚽🏀 반 축구 반 농구','축구교실 농구교실 취미&심화 모집','연령별 대표반 모집'];
 const ghost=document.getElementById('drag-ghost');
+
+// ═══ 동기화 인디케이터 ═══
+function setSyncStatus(status,msg){
+  const el=document.getElementById('sync-indicator');
+  el.className='sync-indicator sync-'+status;
+  el.textContent=msg;
+}
+
+// ═══ 서버 통신 ═══
+async function loadFromServer(){
+  try{
+    setSyncStatus('loading','연결 중...');
+    const res=await fetch(API);
+    if(!res.ok)throw new Error('서버 오류');
+    const d=await res.json();
+    if(d.empty||!d.bb){
+      // 서버에 데이터 없으면 기본값 사용
+      DATA=defData();
+      await saveToServer();
+    } else {
+      DATA=migrateAll(d);
+      ['sc','kd'].forEach(sp=>{padCells(DATA,sp,'sat',SAT_TIMES);padCells(DATA,sp,'sun',SUN_TIMES);});
+      if(!DATA.ticker||!DATA.ticker.length)DATA.ticker=[...DEF_TICKER];
+      if(!DATA.memo)DATA.memo={bb:'',sc:'',kd:''};
+    }
+    setSyncStatus('ok','● 연결됨');
+    return true;
+  }catch(e){
+    setSyncStatus('err','● 오프라인');
+    // 서버 실패 시 localStorage 폴백
+    const s=localStorage.getItem('dosports-tt-v12');
+    DATA=s?migrateAll(JSON.parse(s)):defData();
+    return false;
+  }
+}
+
+async function saveToServer(){
+  try{
+    await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(DATA)});
+    localStorage.setItem('dosports-tt-v12',JSON.stringify(DATA));
+    setSyncStatus('ok','● 저장됨');
+  }catch(e){
+    setSyncStatus('err','● 저장실패');
+    localStorage.setItem('dosports-tt-v12',JSON.stringify(DATA));
+  }
+}
+
+// ═══ 2초마다 자동 동기화 (편집 모드에서는 정지) ═══
+async function syncFromServerSilently(){
+  if(EM||!DATA)return;
+  try{
+    const res=await fetch(API);
+    if(!res.ok)return;
+    const d=await res.json();
+    if(d.empty||!d.bb)return;
+    // 서버 데이터가 로컬과 다를 때만 업데이트
+    const serverStr=JSON.stringify(d);
+    const localStr=JSON.stringify(DATA);
+    if(serverStr!==localStr){
+      DATA=migrateAll(d);
+      ['sc','kd'].forEach(sp=>{padCells(DATA,sp,'sat',SAT_TIMES);padCells(DATA,sp,'sun',SUN_TIMES);});
+      if(!DATA.ticker||!DATA.ticker.length)DATA.ticker=[...DEF_TICKER];
+      if(!DATA.memo)DATA.memo={bb:'',sc:'',kd:''};
+      render();renderTicker();updateMemo();
+      setSyncStatus('ok','● 업데이트됨');
+      setTimeout(()=>setSyncStatus('ok','● 연결됨'),2000);
+    }
+  }catch(e){
+    setSyncStatus('err','● 오프라인');
+  }
+}
+setInterval(syncFromServerSilently,2000);
+
+// ═══ 드래그 ═══
 function ghostShow(h,x,y){ghost.innerHTML=h;ghost.style.display='flex';mg(x,y);}
 function mg(x,y){ghost.style.left=(x-50)+'px';ghost.style.top=(y-36)+'px';}
 function ghostHide(){ghost.style.display='none';ghost.innerHTML='';}
@@ -236,55 +329,13 @@ document.addEventListener('pointerdown',e=>{if(!EM)return;const card=cl(e.target
 document.addEventListener('pointermove',e=>{if(LONG_TIMER){clearTimeout(LONG_TIMER);LONG_TIMER=null;}if(!DRAG)return;e.preventDefault();if(DRAG.type==='card')cardDragMove(e.clientX,e.clientY);else rowDragMove(e.clientX,e.clientY);},{passive:false});
 document.addEventListener('pointerup',e=>{clearTimeout(LONG_TIMER);LONG_TIMER=null;if(!DRAG)return;if(DRAG.type==='card')cardDragEnd(e.clientX,e.clientY);else rowDragEnd(e.clientX,e.clientY);});
 document.addEventListener('pointercancel',()=>{clearTimeout(LONG_TIMER);LONG_TIMER=null;if(DRAG){document.querySelectorAll('.drag-src,.row-src,.drop-ok,.row-over').forEach(e=>e.classList.remove('drag-src','row-src','drop-ok','row-over'));ghostHide();DRAG=null;}});
+
+// ═══ 데이터 ═══
 function migrate(c){if(!c)return[];if(Array.isArray(c))return c;if(c.type==='empty')return[];return[c];}
-function migrateAll(d){['bb','sc','kd'].forEach(sp=>{d[sp].wdGrid=d[sp].wdGrid.map(r=>r.map(migrate));d[sp].sat.cells=d[sp].sat.cells.map(migrate);d[sp].sun.cells=(d[sp].sun.cells||[]).map(migrate);});return d;}
-
-// ★ 버그 수정된 padCells: 저장된 times가 있으면 절대 덮어쓰지 않음
-function padCells(d,sp,sec,times){
-  if(!d[sp][sec].times||d[sp][sec].times.length===0){
-    d[sp][sec].times=[...times];
-  }
-  const c=d[sp][sec].cells;
-  while(c.length<d[sp][sec].times.length)c.push([]);
-}
-
-function defData(){const E=()=>[];return{
-bb:{wdDays:['월','화','수','목','금'],wdTimes:['14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00','18:00-19:00','19:00-20:00','20:00-21:00','21:00-22:00'],
-wdGrid:[[E(),E(),[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],E(),E()],[E(),E(),[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초2-4',max:8,enrolled:0,waitlist:0}],E()],[E(),E(),[{type:'open',text:'오픈반',sub:'초4-6',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],E()],[E(),[{type:'open',text:'오픈반',sub:'유치 7세',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],E(),E()],[[{type:'open',text:'오픈반',sub:'초3-4',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초3-5',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초4-6',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초3-4',max:8,enrolled:0,waitlist:0}]],[[{type:'open',text:'오픈반',sub:'초4-6',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초1-3',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-중등',max:8,enrolled:0,waitlist:0}]],[[{type:'deep',text:'심화(초등/본관)',sub:'담반(초5~키즈짐)',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반(초등/본관)',sub:'담반(초5~키즈짐)',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초등/본관',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반(초등/본관)',sub:'오픈반(골스/키즈짐)',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}]],[[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'adult',text:'성인 기초',sub:'',max:10,enrolled:0,waitlist:0}],E()]],
-note:'학교팀, 반팀 / 학년별 심화&대표반 모집중입니다~!',
-sat:{times:[...SAT_TIMES],cells:[[{type:'open',text:'오픈반(초5~6/키즈짐)',sub:'오픈반(초6~중등/본관)',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반(초5-6)',sub:'오픈반(중등)',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초6~중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-중등',max:8,enrolled:0,waitlist:0}],[{type:'deep',text:'심화(초등)',sub:'',max:8,enrolled:0,waitlist:0}],[{type:'special',text:'여중 수영대비',sub:'',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5~중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'골스',max:8,enrolled:0,waitlist:0}]]},
-sun:{times:[...SUN_TIMES],cells:[[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초3-4',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초2',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'골스',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5~중등',max:8,enrolled:0,waitlist:0}]]}},
-sc:{wdDays:['월','화','수','목','금'],wdTimes:['14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00','18:00-19:00','19:00-20:00','20:00-21:00','21:00-22:00'],
-wdGrid:[[E(),E(),E(),E(),E()],[E(),E(),E(),[{type:'open',text:'오픈반',sub:'유치 6세',max:8,enrolled:0,waitlist:0}],E()],[E(),E(),E(),[{type:'open',text:'오픈반',sub:'유치 6세',max:8,enrolled:0,waitlist:0}],E()],[E(),[{type:'open',text:'오픈반',sub:'유치 5~6세',max:8,enrolled:0,waitlist:0}],E(),E(),[{type:'open',text:'오픈반',sub:'유치 7세',max:8,enrolled:0,waitlist:0}]],[[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}]],[[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}]],[[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'신규개설가능',max:0,enrolled:0,waitlist:0}]],[[{type:'adult',text:'성인',sub:'',max:10,enrolled:0,waitlist:0}],E(),E(),E(),[{type:'adult',text:'여성 성인',sub:'',max:10,enrolled:0,waitlist:0}]]],
-note:'학교팀, 반팀 / 학년별 심화&대표반 모집중입니다~!',
-sat:{times:[...SAT_TIMES],cells:[[{type:'recruit',text:'초등4학년이상 모집',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초1-3',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'유치 7세',max:8,enrolled:0,waitlist:0}],E(),E(),E(),E(),E(),E(),E()]},
-sun:{times:[...SUN_TIMES],cells:[E(),E(),E(),E(),E(),E(),E(),E()]}},
-kd:{wdDays:['월','화','수','목','금'],wdTimes:['13:00-13:50','14:00-14:50','15:00-15:50','16:00-16:50','17:00-17:50','18:00-18:50','19:00-19:50','20:00-20:50','21:00-21:50'],
-wdGrid:[[E(),E(),E(),E(),E()],[E(),E(),E(),E(),E()],[[{type:'rope',text:'줄넘기',sub:'유치부',max:8,enrolled:0,waitlist:0}],[{type:'badminton',text:'배드민턴',sub:'초',max:8,enrolled:0,waitlist:0}],E(),E(),[{type:'rope',text:'줄넘기',sub:'초',max:8,enrolled:0,waitlist:0}]],[E(),E(),E(),E(),E()],[E(),[{type:'inline',text:'인라인',sub:'초',max:8,enrolled:0,waitlist:0}],E(),E(),[{type:'badminton',text:'배드민턴',sub:'',max:8,enrolled:0,waitlist:0}]],[E(),[{type:'rope',text:'줄넘기',sub:'초',max:8,enrolled:0,waitlist:0}],E(),E(),E()],[[{type:'rope',text:'줄넘기',sub:'초등',max:8,enrolled:0,waitlist:0}],E(),E(),E(),E()],[E(),E(),E(),E(),E()],[E(),E(),E(),E(),E()]],
-note:'줄넘기 유치부 7세이상',
-sat:{times:[...SAT_TIMES],cells:Array.from({length:10},()=>[])},
-sun:{times:[...SUN_TIMES],cells:Array.from({length:8},()=>[])}},
-ticker:[...DEF_TICKER],memo:{bb:'',sc:'',kd:''}
-};}
-
-function loadData(){
-  try{
-    const s=localStorage.getItem(SK);
-    if(s){
-      const d=migrateAll(JSON.parse(s));
-      // ★ 버그 수정: 저장된 times 보존, 없을 때만 기본값 사용
-      ['sc','kd'].forEach(sp=>{
-        padCells(d,sp,'sat',SAT_TIMES);
-        padCells(d,sp,'sun',SUN_TIMES);
-      });
-      if(!d.ticker||!d.ticker.length)d.ticker=[...DEF_TICKER];
-      if(!d.memo)d.memo={bb:'',sc:'',kd:''};
-      return d;
-    }
-  }catch(e){}
-  return defData();
-}
-function saveData(){try{localStorage.setItem(SK,JSON.stringify(DATA));}catch(e){}}
+function migrateAll(d){['bb','sc','kd'].forEach(sp=>{if(!d[sp])return;d[sp].wdGrid=d[sp].wdGrid.map(r=>r.map(migrate));d[sp].sat.cells=d[sp].sat.cells.map(migrate);d[sp].sun.cells=(d[sp].sun.cells||[]).map(migrate);});return d;}
+function padCells(d,sp,sec,times){if(!d[sp][sec].times||d[sp][sec].times.length===0){d[sp][sec].times=[...times];}const c=d[sp][sec].cells;while(c.length<d[sp][sec].times.length)c.push([]);}
+function defData(){const E=()=>[];return{bb:{wdDays:['월','화','수','목','금'],wdTimes:['14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00','18:00-19:00','19:00-20:00','20:00-21:00','21:00-22:00'],wdGrid:[[E(),E(),[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],E(),E()],[E(),E(),[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초2-4',max:8,enrolled:0,waitlist:0}],E()],[E(),E(),[{type:'open',text:'오픈반',sub:'초4-6',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],E()],[E(),[{type:'open',text:'오픈반',sub:'유치 7세',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],E(),E()],[[{type:'open',text:'오픈반',sub:'초3-4',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초3-5',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초4-6',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초3-4',max:8,enrolled:0,waitlist:0}]],[[{type:'open',text:'오픈반',sub:'초4-6',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초1-3',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-중등',max:8,enrolled:0,waitlist:0}]],[[{type:'deep',text:'심화(초등/본관)',sub:'담반(초5~키즈짐)',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반(초등/본관)',sub:'담반(초5~키즈짐)',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초등/본관',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반(초등/본관)',sub:'오픈반(골스/키즈짐)',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}]],[[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'adult',text:'성인 기초',sub:'',max:10,enrolled:0,waitlist:0}],E()]],note:'학교팀, 반팀 / 학년별 심화&대표반 모집중입니다~!',sat:{times:[...SAT_TIMES],cells:[[{type:'open',text:'오픈반(초5~6/키즈짐)',sub:'오픈반(초6~중등/본관)',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반(초5-6)',sub:'오픈반(중등)',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초6~중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-중등',max:8,enrolled:0,waitlist:0}],[{type:'deep',text:'심화(초등)',sub:'',max:8,enrolled:0,waitlist:0}],[{type:'special',text:'여중 수영대비',sub:'',max:10,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5~중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'골스',max:8,enrolled:0,waitlist:0}]]},sun:{times:[...SUN_TIMES],cells:[[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'중등',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초3-4',max:8,enrolled:0,waitlist:0}],E(),[{type:'open',text:'오픈반',sub:'초2',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'골스',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5-6',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초5~중등',max:8,enrolled:0,waitlist:0}]]}},sc:{wdDays:['월','화','수','목','금'],wdTimes:['14:00-15:00','15:00-16:00','16:00-17:00','17:00-18:00','18:00-19:00','19:00-20:00','20:00-21:00','21:00-22:00'],wdGrid:[[E(),E(),E(),E(),E()],[E(),E(),E(),[{type:'open',text:'오픈반',sub:'유치 6세',max:8,enrolled:0,waitlist:0}],E()],[E(),E(),E(),[{type:'open',text:'오픈반',sub:'유치 6세',max:8,enrolled:0,waitlist:0}],E()],[E(),[{type:'open',text:'오픈반',sub:'유치 5~6세',max:8,enrolled:0,waitlist:0}],E(),E(),[{type:'open',text:'오픈반',sub:'유치 7세',max:8,enrolled:0,waitlist:0}]],[[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}]],[[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}]],[[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'recruit',text:'초등부 모집중',sub:'신규개설가능',max:0,enrolled:0,waitlist:0}]],[[{type:'adult',text:'성인',sub:'',max:10,enrolled:0,waitlist:0}],E(),E(),E(),[{type:'adult',text:'여성 성인',sub:'',max:10,enrolled:0,waitlist:0}]]],note:'학교팀, 반팀 / 학년별 심화&대표반 모집중입니다~!',sat:{times:[...SAT_TIMES],cells:[[{type:'recruit',text:'초등4학년이상 모집',sub:'',max:0,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'초1-3',max:8,enrolled:0,waitlist:0}],[{type:'open',text:'오픈반',sub:'유치 7세',max:8,enrolled:0,waitlist:0}],E(),E(),E(),E(),E(),E(),E()]},sun:{times:[...SUN_TIMES],cells:[E(),E(),E(),E(),E(),E(),E(),E()]}},kd:{wdDays:['월','화','수','목','금'],wdTimes:['13:00-13:50','14:00-14:50','15:00-15:50','16:00-16:50','17:00-17:50','18:00-18:50','19:00-19:50','20:00-20:50','21:00-21:50'],wdGrid:[[E(),E(),E(),E(),E()],[E(),E(),E(),E(),E()],[[{type:'rope',text:'줄넘기',sub:'유치부',max:8,enrolled:0,waitlist:0}],[{type:'badminton',text:'배드민턴',sub:'초',max:8,enrolled:0,waitlist:0}],E(),E(),[{type:'rope',text:'줄넘기',sub:'초',max:8,enrolled:0,waitlist:0}]],[E(),E(),E(),E(),E()],[E(),[{type:'inline',text:'인라인',sub:'초',max:8,enrolled:0,waitlist:0}],E(),E(),[{type:'badminton',text:'배드민턴',sub:'',max:8,enrolled:0,waitlist:0}]],[E(),[{type:'rope',text:'줄넘기',sub:'초',max:8,enrolled:0,waitlist:0}],E(),E(),E()],[[{type:'rope',text:'줄넘기',sub:'초등',max:8,enrolled:0,waitlist:0}],E(),E(),E(),E()],[E(),E(),E(),E(),E()],[E(),E(),E(),E(),E()]],note:'줄넘기 유치부 7세이상',sat:{times:[...SAT_TIMES],cells:Array.from({length:10},()=>[])},sun:{times:[...SUN_TIMES],cells:Array.from({length:8},()=>[])}},ticker:[...DEF_TICKER],memo:{bb:'',sc:'',kd:''}};}
+async function saveData(){await saveToServer();}
 function getCA(sp,sec,i1,i2){if(sec==='wd')return DATA[sp].wdGrid[i1][i2];if(sec==='sat')return DATA[sp].sat.cells[i1];return DATA[sp].sun.cells[i1];}
 function setCA(sp,sec,i1,i2,a){if(sec==='wd')DATA[sp].wdGrid[i1][i2]=a;else if(sec==='sat')DATA[sp].sat.cells[i1]=a;else DATA[sp].sun.cells[i1]=a;}
 function adj(k,d){CV[k]=Math.max(0,Math.min(99,CV[k]+d));document.getElementById('d-'+k).textContent=CV[k];}
@@ -298,8 +349,8 @@ function render(){const d=DATA[CS];const wc=(d.sat.cells||[]).filter(a=>a&&a.len
 function openAddClass(sp,sec,ti,di){if(!EM)return;ET={sp,sec,ti,di,ci:null};document.getElementById('m-lbl').textContent='수업 추가';document.getElementById('m-slot').textContent=_sl(sp,sec,ti);document.getElementById('btn-del').style.display='none';CT='open';document.querySelectorAll('.tp-btn').forEach(b=>b.classList.remove('sel'));document.querySelector('.tp-open').classList.add('sel');document.getElementById('f-nm').value='오픈반';document.getElementById('f-sb').value='';setCV(8,0,0);updatePrev();document.getElementById('cm-ov').style.display='flex';}
 function openEditClass(sp,sec,ti,di,ci){if(!EM)return;ET={sp,sec,ti,di,ci};const c=getCA(sp,sec,ti,di)[ci];document.getElementById('m-lbl').textContent='수업 수정 ('+(ci+1)+'번째)';document.getElementById('m-slot').textContent=_sl(sp,sec,ti);document.getElementById('btn-del').style.display='';CT=c.type||'open';document.querySelectorAll('.tp-btn').forEach(b=>b.classList.remove('sel'));const s=document.querySelector('.tp-'+CT);if(s)s.classList.add('sel');document.getElementById('f-nm').value=c.text||'';document.getElementById('f-sb').value=c.sub||'';setCV(c.max||0,c.enrolled||0,c.waitlist||0);updatePrev();document.getElementById('cm-ov').style.display='flex';}
 function _sl(sp,sec,ti){if(sec==='wd')return DATA[sp].wdDays[0]+'~금 · '+DATA[sp].wdTimes[ti];if(sec==='sat')return'토요일 · '+(DATA[sp].sat.times[ti]||'');return'일요일 · '+(DATA[sp].sun.times[ti]||'');}
-function saveCell(){if(!ET)return;const{sp,sec,ti,di,ci}=ET;const nm=document.getElementById('f-nm').value.trim(),sb=document.getElementById('f-sb').value.trim();const nc={type:CT,text:nm||CT,sub:sb,max:CV.mx,enrolled:CV.en,waitlist:CV.wl};const arr=getCA(sp,sec,ti,di);if(ci===null)arr.push(nc);else arr[ci]=nc;setCA(sp,sec,ti,di,arr);saveData();closeOv('cm-ov');render();showToast(ci===null?'수업 추가 완료 ✓':'수업 수정 완료 ✓');}
-function deleteClass(){if(!ET||ET.ci===null)return;const{sp,sec,ti,di,ci}=ET;const arr=getCA(sp,sec,ti,di);arr.splice(ci,1);setCA(sp,sec,ti,di,arr);saveData();closeOv('cm-ov');render();showToast('수업 삭제 완료');}
+async function saveCell(){if(!ET)return;const{sp,sec,ti,di,ci}=ET;const nm=document.getElementById('f-nm').value.trim(),sb=document.getElementById('f-sb').value.trim();const nc={type:CT,text:nm||CT,sub:sb,max:CV.mx,enrolled:CV.en,waitlist:CV.wl};const arr=getCA(sp,sec,ti,di);if(ci===null)arr.push(nc);else arr[ci]=nc;setCA(sp,sec,ti,di,arr);await saveData();closeOv('cm-ov');render();showToast(ci===null?'수업 추가 완료 ✓':'수업 수정 완료 ✓');}
+async function deleteClass(){if(!ET||ET.ci===null)return;const{sp,sec,ti,di,ci}=ET;const arr=getCA(sp,sec,ti,di);arr.splice(ci,1);setCA(sp,sec,ti,di,arr);await saveData();closeOv('cm-ov');render();showToast('수업 삭제 완료');}
 function selType(tp,btn){CT=tp;document.querySelectorAll('.tp-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');const nm=document.getElementById('f-nm');const defs={open:'오픈반',deep:'심화반',recruit:'모집중',adult:'성인반',rope:'줄넘기',badminton:'배드민턴',inline:'인라인',special:'특별반',new:'신규개설가능'};if(!nm.value.trim()||Object.values(defs).includes(nm.value))nm.value=defs[tp]||'';updatePrev();}
 function updatePrev(){const tp=CT,nm=document.getElementById('f-nm').value,sb=document.getElementById('f-sb').value;const{mx,en,wl}=CV;const gp=sb?'<span class="gp" style="background:'+(TBGS[tp]||'#1a1d27')+';color:'+(TFGS[tp]||'#aaa')+';border:0.5px solid '+(TFGS[tp]||'#aaa')+'50">'+sb+'</span>':'';let cap='';if(mx>0){const rem=mx-en;const cls=en>=mx?'cp-full':rem<=2?'cp-mid':'cp-ok';cap='<div class="cap-row"><span class="cp '+cls+'">'+en+'/'+mx+'명</span>'+(wl>0?'<span class="wl">대기 '+wl+'명</span>':'')+'</div>';}document.getElementById('prev-box').innerHTML='<div style="background:'+(TBGS[tp]||'#1a1d27')+';border-radius:6px;padding:10px 20px;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:110px"><div style="font-size:13px;font-weight:700;color:'+(TFGS[tp]||'#fff')+'">'+nm+'</div>'+gp+cap+'</div>';}
 function renderTicker(){const msgs=DATA.ticker&&DATA.ticker.length?DATA.ticker:DEF_TICKER;const text=msgs.map(m=>'🔔 '+m).join('　　　✦　　　');const full=text+'　　　　'+text;const track=document.getElementById('ticker-track');if(!track)return;track.textContent=full;track.style.animationDuration=Math.max(12,full.length*0.18)+'s';}
@@ -308,18 +359,20 @@ function renderTickerList(){let h='';(DATA.ticker||[]).forEach((msg,i)=>{h+='<di
 function addTickerMsg(){if(!DATA.ticker)DATA.ticker=[];syncTk();DATA.ticker.push('새 공지사항');renderTickerList();const l=document.getElementById('tk-'+(DATA.ticker.length-1));if(l){l.focus();l.select();}}
 function delTk(i){syncTk();DATA.ticker.splice(i,1);renderTickerList();}
 function syncTk(){(DATA.ticker||[]).forEach((_,i)=>{const el=document.getElementById('tk-'+i);if(el)DATA.ticker[i]=el.value;});}
-function saveTickerAll(){syncTk();saveData();closeOv('tk-ov');renderTicker();showToast('공지 저장 완료 ✓');}
+async function saveTickerAll(){syncTk();await saveData();closeOv('tk-ov');renderTicker();showToast('공지 저장 완료 ✓');}
 function openTE(sp,sec,idx){if(!EM||DRAG)return;TE_={sp,sec,idx};const cur=sec==='wd'?DATA[sp].wdTimes[idx]:(sec==='sat'?DATA[sp].sat.times[idx]:DATA[sp].sun.times[idx]);const lb={wd:'평일',sat:'토요일',sun:'일요일'};document.getElementById('te-slot').textContent=lb[sec]+' '+(idx+1)+'번째 슬롯';document.getElementById('te-val').value=cur||'';document.getElementById('te-ov').style.display='flex';setTimeout(()=>{const el=document.getElementById('te-val');el.focus();el.select();},60);}
-function saveTime(){if(!TE_)return;const{sp,sec,idx}=TE_;const val=document.getElementById('te-val').value.trim();if(!val)return;if(sec==='wd')DATA[sp].wdTimes[idx]=val;else if(sec==='sat')DATA[sp].sat.times[idx]=val;else DATA[sp].sun.times[idx]=val;saveData();closeOv('te-ov');render();showToast('시간 저장 완료 ✓');}
+async function saveTime(){if(!TE_)return;const{sp,sec,idx}=TE_;const val=document.getElementById('te-val').value.trim();if(!val)return;if(sec==='wd')DATA[sp].wdTimes[idx]=val;else if(sec==='sat')DATA[sp].sat.times[idx]=val;else DATA[sp].sun.times[idx]=val;await saveData();closeOv('te-ov');render();showToast('시간 저장 완료 ✓');}
 function setMemoMode(on){const ta=document.getElementById('memo-ta'),lk=document.getElementById('memo-lock');ta.readOnly=!on;if(on){ta.placeholder='메모를 입력하세요...';lk.textContent='✏️ 편집 가능';lk.style.color='#4ade80';}else{ta.placeholder='편집 모드에서 메모를 입력할 수 있습니다';lk.textContent='🔒 편집 모드에서 수정 가능';lk.style.color='#6a7090';}}
-function initMemo(){const ta=document.getElementById('memo-ta');ta.value=DATA.memo[CS]||'';setMemoMode(EM);ta.oninput=()=>{if(ta.readOnly)return;DATA.memo[CS]=ta.value;clearTimeout(memoTimer);memoTimer=setTimeout(()=>{saveData();const sv=document.getElementById('memo-saved');sv.classList.add('show');setTimeout(()=>sv.classList.remove('show'),2000);},600);};}
+function initMemo(){const ta=document.getElementById('memo-ta');ta.value=DATA.memo[CS]||'';setMemoMode(EM);ta.oninput=()=>{if(ta.readOnly)return;DATA.memo[CS]=ta.value;clearTimeout(memoTimer);memoTimer=setTimeout(async()=>{await saveData();const sv=document.getElementById('memo-saved');sv.classList.add('show');setTimeout(()=>sv.classList.remove('show'),2000);},600);};}
 function updateMemo(){document.getElementById('memo-ta').value=DATA.memo[CS]||'';}
 function ss(s,btn){CS=s;document.querySelectorAll('.stab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');render();updateMemo();}
 function toggleEdit(){if(EM){EM=false;document.getElementById('edbtn').classList.remove('on');document.getElementById('edbtn').textContent='✎ 편집';document.getElementById('ebar').classList.remove('on');document.getElementById('tk-btn').classList.remove('on');setMemoMode(false);render();showToast('편집 모드 종료');}else{document.getElementById('pw-ov').style.display='flex';setTimeout(()=>document.getElementById('pw-in').focus(),50);}}
 function chkPwd(){if(document.getElementById('pw-in').value===PWD){closeOv('pw-ov');document.getElementById('pw-in').value='';document.getElementById('pw-err').textContent='';EM=true;document.getElementById('edbtn').classList.add('on');document.getElementById('edbtn').textContent='✓ 완료';document.getElementById('ebar').classList.add('on');document.getElementById('tk-btn').classList.add('on');setMemoMode(true);render();showToast('편집 모드 활성화');}else{document.getElementById('pw-err').textContent='비밀번호가 틀렸습니다.';}}
 function closeOv(id){document.getElementById(id).style.display='none';}
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
-DATA=loadData();render();renderTicker();initMemo();
+
+// 초기화
+loadFromServer().then(()=>{render();renderTicker();initMemo();});
 </script>
 </body>
 </html>
