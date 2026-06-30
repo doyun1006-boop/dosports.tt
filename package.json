@@ -1,7 +1,11 @@
 {
-  "name": "dosports-timetable",
-  "version": "1.0.0",
+  "name": "academy-live-schedule",
+  "version": "1.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo \"Static site - no build step\""
+  },
   "dependencies": {
-    "@netlify/blobs": "^8.1.0"
+    "@netlify/blobs": "^8.2.0"
   }
 }
