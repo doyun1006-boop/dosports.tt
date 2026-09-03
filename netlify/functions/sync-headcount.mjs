@@ -19,7 +19,20 @@ export default async () => {
       }))
     })
   });
+  const { counts = {} } = await res.json();
 
-  const text = await res.text();
-  return new Response('STATUS ' + res.status + '\n\n' + text.slice(0, 1500));
+  let changed = 0;
+  for (const l of data.lessons) {
+    const n = counts[l.id];
+    if (typeof n === 'number' && n !== l.currentStudents) {
+      l.currentStudents = n;
+      changed++;
+    }
+  }
+  if (changed) await store.setJSON('current', data);
+
+  return new Response(`updated ${changed}`);
 };
+
+export const config = { schedule: '*/1 * * * *' };
+  
