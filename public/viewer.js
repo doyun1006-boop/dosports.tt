@@ -215,10 +215,10 @@ function byDayAndTime(a, b) {
 }
 
 function capacityText(lesson) {
-  const current = Number(lesson.currentStudents || 0);
-  const limit = Number(lesson.capacity || 0);
-  if (!limit) return "정원 미정";
-  return `${current}/${limit}명`;
+  const current = Number(lesson.currentStudents);
+  const limit = Number(lesson.capacity);
+  const special = /팀반|반축구|대표|심화|개인|레슨|Private|Develop|Overcome/i.test(lesson.name || '');
+  return !special && lesson.consultRequired !== true && lesson.registrationStatus !== 'consult' && Number.isFinite(current) && current >= 0 && limit > current && latestData !== fallbackSchedule ? '참여가능' : '상담필요';
 }
 
 function categoryInfo(id = activeCategory) {
@@ -639,6 +639,7 @@ function render(data) {
   heroTitle.textContent = data.heroTitle || defaults.heroTitle;
   heroDescription.textContent = data.heroDescription || defaults.heroDescription;
   notice.hidden = !data.notice;
+  notice.closest(".notice-bar").hidden = !data.notice;
   notice.textContent = data.notice || "";
 
   renderActionLinks(data);
