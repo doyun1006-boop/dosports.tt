@@ -216,6 +216,7 @@ function byDayAndTime(a, b) {
 
 function capacityText(lesson) {
   const current = Number(lesson.currentStudents);
+  if (Number.isFinite(current) && current >= 8 && latestData !== fallbackSchedule) return '마감 임박 · 상담필요';
   const limit = Number(lesson.capacity);
   const special = /팀반|반축구|대표|심화|개인|레슨|Private|Develop|Overcome/i.test(lesson.name || '');
   return !special && lesson.consultRequired !== true && lesson.registrationStatus !== 'consult' && Number.isFinite(current) && current >= 0 && limit > current && latestData !== fallbackSchedule ? '참여가능' : '상담필요';
